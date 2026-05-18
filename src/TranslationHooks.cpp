@@ -1118,7 +1118,10 @@ GotgHookStatus install_all_hooks()
     // Offset: gotg_base + 0x1BFB5A0
     // =========================================================================
     {
-        void* target_addr = (void*)(gotg_base + 0x1BFB5A0);
+        uint64_t rva = 0x1BFB5A0; // Epic Games
+        if (gotg_size == 508186624) rva = 0x1BF5360; // Steam
+        
+        void* target_addr = (void*)(gotg_base + rva);
         if (g_debug) g_debug->print("[INFO] ZSubtitlesField::SetText target: 0x" + sp::str::to_hex((uint64_t)target_addr) + "\n");
 
         status = MH_CreateHook(target_addr,
@@ -1178,7 +1181,10 @@ GotgHookStatus install_all_hooks()
             }
         }
 
-        void* target_addr = (void*)(gotg_base + 0x1DB69D30);
+        uint64_t rva = 0x1DB69D30; // Epic Games
+        if (gotg_size == 508186624) rva = 0x1E644840; // Steam
+        
+        void* target_addr = (void*)(gotg_base + rva);
         if (g_debug) g_debug->print("[INFO] FT_New_Memory_Face target: 0x" + sp::str::to_hex((uint64_t)target_addr) + "\n");
 
         status = MH_CreateHook(target_addr,
@@ -1196,7 +1202,10 @@ GotgHookStatus install_all_hooks()
     // HOOK 4/5: TryGetText — PASSTHROUGH (isolation test)
     // =========================================================================
     {
-        void* target_addr = (void*)(gotg_base + 0x0060DAD0);
+        uint64_t rva = 0x0060DAD0; // Epic Games
+        if (gotg_size == 508186624) rva = 0x607B10; // Steam
+        
+        void* target_addr = (void*)(gotg_base + rva);
         status = MH_CreateHook(target_addr, &detour_ZTextBundle_TryGetText,
                                reinterpret_cast<void**>(&g_orig_ZTextBundle_TryGetText));
         if (status == MH_OK) {
@@ -1207,7 +1216,10 @@ GotgHookStatus install_all_hooks()
         }
     }
     {
-        void* target_addr = (void*)(gotg_base + 0x60DD80);
+        uint64_t rva = 0x60DD80; // Epic Games
+        if (gotg_size == 508186624) rva = 0x607DC0; // Steam
+        
+        void* target_addr = (void*)(gotg_base + rva);
         status = MH_CreateHook(target_addr, &detour_ZTextBundle_TryGetText_Hash,
                                reinterpret_cast<void**>(&g_orig_ZTextBundle_TryGetText_Hash));
         if (status == MH_OK) {
@@ -1220,11 +1232,12 @@ GotgHookStatus install_all_hooks()
 
     // =========================================================================
     // HOOK 6: ui::base::ZTextFieldEntity::OnSetText
-    // RVA: 0x00BF64D0
-    // Re-enabled: Previous crash was caused by StringAlloc hook (now disabled)
     // =========================================================================
     {
-        void* target_addr = (void*)(gotg_base + 0xBF64D0);
+        uint64_t rva = 0xBF64D0; // Epic Games
+        if (gotg_size == 508186624) rva = 0xBF0170; // Steam
+        
+        void* target_addr = (void*)(gotg_base + rva);
         status = MH_CreateHook(target_addr, &detour_ZTextFieldEntity_OnSetText,
                                reinterpret_cast<void**>(&g_orig_ZTextFieldEntity_OnSetText));
         if (status == MH_OK) {
@@ -1241,7 +1254,10 @@ GotgHookStatus install_all_hooks()
     // Re-enabled: Previous heap corruption was from StringAlloc (now disabled)
     // =========================================================================
     {
-        void* target_addr = (void*)(gotg_base + 0xBECEF0);
+        uint64_t rva = 0xBECEF0; // Epic Games
+        if (gotg_size == 508186624) rva = 0xBE6B90; // Steam
+        
+        void* target_addr = (void*)(gotg_base + rva);
         status = MH_CreateHook(target_addr, &detour_ZTextFieldEntity_GetText,
                                reinterpret_cast<void**>(&g_orig_ZTextFieldEntity_GetText));
         if (status == MH_OK) {
