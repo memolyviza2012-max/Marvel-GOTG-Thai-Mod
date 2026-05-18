@@ -637,19 +637,7 @@ bool get_translations_enabled() { return g_translations_enabled; }
 
 const char* detour_string_alloc(void* mem_mgr, const char* original_str)
 {
-    // ONE-SHOT diagnostic
-    static bool logged = false;
-    if (!logged) {
-        logged = true;
-        FILE* fl = nullptr;
-        fopen_s(&fl, "F:\\Epic Games\\MarvelGOTG\\retail\\SA_Debug.log", "w");
-        if (fl) {
-            fprintf(fl, "StringAlloc ALIVE at 0x64BA24! mem_mgr=%p str=%p\n",
-                mem_mgr, (void*)original_str);
-            fflush(fl);
-            fclose(fl);
-        }
-    }
+
 
     if (!g_saved_mem_mgr) g_saved_mem_mgr = mem_mgr;
     if (g_orig_StringAlloc) {

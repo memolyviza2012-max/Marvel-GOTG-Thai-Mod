@@ -22,7 +22,8 @@
 // CONFIGURATION
 // ============================================================================
 
-const char* cfg_file = ".\\GOTG_Mod.ini";
+std::string g_cfg_path;
+const char* cfg_file = ""; // Will be set dynamically
 sp::io::ps_ostream g_debug;
 static sp::io::ps_ostream* g_debug_static = nullptr;
 
@@ -113,16 +114,16 @@ BOOL WINAPI DllMain(HINSTANCE hinst_dll, DWORD fdw_reason, LPVOID lpv_reserved)
         // Load system version.dll immediately on attach
         LoadSystemVersionDll();
 
-        // Set working directory to game retail folder
-        SetCurrentDirectoryA(sp::env::lib_dir().c_str());
+        // Construct absolute path for config file based on DLL location
+        g_cfg_path = sp::env::lib_dir() + "\\GOTG_Mod.ini";
+        cfg_file = g_cfg_path.c_str();
 
         // Validate configuration file exists
         std::ifstream cfg_check(cfg_file);
         if (!cfg_check.good())
         {
             std::string err_msg = std::string("GOTG Thai Mod: Configuration file not found:\n") + cfg_file + "\n\n";
-            err_msg += "Current directory:\n" + std::filesystem::current_path().string() + "\n\n";
-            err_msg += "Please copy GOTG_Mod.ini to the retail folder.";
+            err_msg += "Please copy GOTG_Mod.ini to the same folder as version.dll.";
             MessageBoxA(NULL, err_msg.c_str(), "ERROR", MB_OK | MB_SETFOREGROUND | MB_TOPMOST | MB_APPLMODAL);
             ExitProcess(SP_ERR_FILE_NOT_FOUND);
         }
@@ -246,7 +247,7 @@ void init_debug()
 
     // Get log file path from config
     GetPrivateProfileStringA("DLL", "LogFile", g_log_file.c_str(), cfg_str, MAX_PATH, cfg_file);
-    g_log_file = cfg_str;
+    g_log_file = sp::env::lib_dir() + "\\" + cfg_str;
 
     g_debug.set_log_file(g_log_file);
 
@@ -361,16 +362,18 @@ void init_settings()
     // Load translation JSON file
     char json_path[MAX_PATH];
     GetPrivateProfileStringA("Language", "StringsJSON", "", json_path, MAX_PATH, cfg_file);
-    load_translation_json(json_path);
-    g_debug.print("    Translation JSON: " + std::string(json_path) + "\n");
+    std::string full_json_path = sp::env::lib_dir() + "\\" + json_path;
+    load_translation_json(full_json_path.c_str());
+    g_debug.print("    Translation JSON: " + full_json_path + "\n");
 
     // Load custom UI font path if specified (stored separately, not as a JSON dict)
     char font_path[MAX_PATH];
     GetPrivateProfileStringA("Language", "UIFont", "", font_path, MAX_PATH, cfg_file);
     if (font_path[0] != '\0')
     {
-        set_ui_font_path(font_path);
-        g_debug.print("    Custom font: " + std::string(font_path) + "\n");
+        std::string full_font_path = sp::env::lib_dir() + "\\" + font_path;
+        set_ui_font_path(full_font_path.c_str());
+        g_debug.print("    Custom font: " + full_font_path + "\n");
     }
 }
 
