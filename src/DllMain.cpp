@@ -118,14 +118,11 @@ BOOL WINAPI DllMain(HINSTANCE hinst_dll, DWORD fdw_reason, LPVOID lpv_reserved)
         g_cfg_path = sp::env::lib_dir() + "\\GOTG_Mod.ini";
         cfg_file = g_cfg_path.c_str();
 
-        // Validate configuration file exists
+        // Validate configuration file exists (Optional now)
         std::ifstream cfg_check(cfg_file);
         if (!cfg_check.good())
         {
-            std::string err_msg = std::string("GOTG Thai Mod: Configuration file not found:\n") + cfg_file + "\n\n";
-            err_msg += "Please copy GOTG_Mod.ini to the same folder as version.dll.";
-            MessageBoxA(NULL, err_msg.c_str(), "ERROR", MB_OK | MB_SETFOREGROUND | MB_TOPMOST | MB_APPLMODAL);
-            ExitProcess(SP_ERR_FILE_NOT_FOUND);
+            // Just continue with defaults, no error box
         }
 
         // Initialize debug logging
@@ -245,8 +242,8 @@ void init_debug()
 {
     char cfg_str[MAX_PATH];
 
-    // Get log file path from config
-    GetPrivateProfileStringA("DLL", "LogFile", g_log_file.c_str(), cfg_str, MAX_PATH, cfg_file);
+    // Get log file path from config (fallback to GOTG_Mod.log)
+    GetPrivateProfileStringA("DLL", "LogFile", "GOTG_Mod.log", cfg_str, MAX_PATH, cfg_file);
     g_log_file = sp::env::lib_dir() + "\\" + cfg_str;
 
     g_debug.set_log_file(g_log_file);
@@ -361,14 +358,14 @@ void init_settings()
 
     // Load translation JSON file
     char json_path[MAX_PATH];
-    GetPrivateProfileStringA("Language", "StringsJSON", "", json_path, MAX_PATH, cfg_file);
+    GetPrivateProfileStringA("Language", "StringsJSON", "strings_th.json", json_path, MAX_PATH, cfg_file);
     std::string full_json_path = sp::env::lib_dir() + "\\" + json_path;
     load_translation_json(full_json_path.c_str());
     g_debug.print("    Translation JSON: " + full_json_path + "\n");
 
-    // Load custom UI font path if specified (stored separately, not as a JSON dict)
+    // Load custom UI font path if specified
     char font_path[MAX_PATH];
-    GetPrivateProfileStringA("Language", "UIFont", "", font_path, MAX_PATH, cfg_file);
+    GetPrivateProfileStringA("Language", "UIFont", "font_th.ttf", font_path, MAX_PATH, cfg_file);
     if (font_path[0] != '\0')
     {
         std::string full_font_path = sp::env::lib_dir() + "\\" + font_path;
