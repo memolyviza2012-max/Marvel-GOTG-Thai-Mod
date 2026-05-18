@@ -61,7 +61,7 @@ GOTG_API extern void *resid_record_mapping_func;
 
 // gotg.exe base address — set by DllMain.cpp during DLL_PROCESS_ATTACH
 GOTG_API extern uint64_t gotg_base;
-GOTG_API extern uint64_t gotg_size;
+GOTG_API extern uint64_t gotg_file_size;
 
 // Runtime state tracking
 GOTG_API extern uint64_t textlist_res_id;

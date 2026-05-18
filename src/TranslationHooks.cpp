@@ -1119,7 +1119,7 @@ GotgHookStatus install_all_hooks()
     // =========================================================================
     {
         uint64_t rva = 0x1BFB5A0; // Epic Games
-        if (gotg_size == 508186624) rva = 0x1BF5360; // Steam
+        if (gotg_file_size == 508186624) rva = 0x1BF5360; // Steam
         
         void* target_addr = (void*)(gotg_base + rva);
         if (g_debug) g_debug->print("[INFO] ZSubtitlesField::SetText target: 0x" + sp::str::to_hex((uint64_t)target_addr) + "\n");
@@ -1182,7 +1182,7 @@ GotgHookStatus install_all_hooks()
         }
 
         uint64_t rva = 0x1DB69D30; // Epic Games
-        if (gotg_size == 508186624) rva = 0x1E644840; // Steam
+        if (gotg_file_size == 508186624) rva = 0x1E644840; // Steam
         
         void* target_addr = (void*)(gotg_base + rva);
         if (g_debug) g_debug->print("[INFO] FT_New_Memory_Face target: 0x" + sp::str::to_hex((uint64_t)target_addr) + "\n");
@@ -1203,7 +1203,7 @@ GotgHookStatus install_all_hooks()
     // =========================================================================
     {
         uint64_t rva = 0x0060DAD0; // Epic Games
-        if (gotg_size == 508186624) rva = 0x607B10; // Steam
+        if (gotg_file_size == 508186624) rva = 0x607B10; // Steam
         
         void* target_addr = (void*)(gotg_base + rva);
         status = MH_CreateHook(target_addr, &detour_ZTextBundle_TryGetText,
@@ -1217,7 +1217,7 @@ GotgHookStatus install_all_hooks()
     }
     {
         uint64_t rva = 0x60DD80; // Epic Games
-        if (gotg_size == 508186624) rva = 0x607DC0; // Steam
+        if (gotg_file_size == 508186624) rva = 0x607DC0; // Steam
         
         void* target_addr = (void*)(gotg_base + rva);
         status = MH_CreateHook(target_addr, &detour_ZTextBundle_TryGetText_Hash,
@@ -1235,7 +1235,7 @@ GotgHookStatus install_all_hooks()
     // =========================================================================
     {
         uint64_t rva = 0xBF64D0; // Epic Games
-        if (gotg_size == 508186624) rva = 0xBF0170; // Steam
+        if (gotg_file_size == 508186624) rva = 0xBF0170; // Steam
         
         void* target_addr = (void*)(gotg_base + rva);
         status = MH_CreateHook(target_addr, &detour_ZTextFieldEntity_OnSetText,
@@ -1255,7 +1255,7 @@ GotgHookStatus install_all_hooks()
     // =========================================================================
     {
         uint64_t rva = 0xBECEF0; // Epic Games
-        if (gotg_size == 508186624) rva = 0xBE6B90; // Steam
+        if (gotg_file_size == 508186624) rva = 0xBE6B90; // Steam
         
         void* target_addr = (void*)(gotg_base + rva);
         status = MH_CreateHook(target_addr, &detour_ZTextFieldEntity_GetText,

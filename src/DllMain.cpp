@@ -83,6 +83,8 @@ extern "C" {
     uint64_t textlist_res_id        = 0;
     uint32_t textlist_str_id        = 0;
     uint64_t video_res_id           = 0;
+    
+    uint64_t gotg_file_size         = 0;
 }
 
 // ============================================================================
@@ -157,6 +159,15 @@ BOOL WINAPI DllMain(HINSTANCE hinst_dll, DWORD fdw_reason, LPVOID lpv_reserved)
 
         g_debug.print("    Base:  0x" + sp::str::to_hex(gotg_base) + "\n");
         g_debug.print("    Size:  0x" + sp::str::to_hex(gotg_size) + " (" + std::to_string(gotg_size / (1024 * 1024)) + " MB)\n");
+
+        // Get physical file size for version detection
+        try {
+            gotg_file_size = std::filesystem::file_size(sp::env::exe_path());
+            g_debug.print("    Physical Size: " + std::to_string(gotg_file_size) + " bytes\n");
+        } catch (...) {
+            g_debug.print("    [WARNING] Could not determine physical file size\n");
+            gotg_file_size = 0;
+        }
 
         // Validate game version before proceeding
         if (!validate_game_version())
