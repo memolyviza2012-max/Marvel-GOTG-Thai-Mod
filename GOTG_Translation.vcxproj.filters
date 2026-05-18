@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{B123C456-D789-ABCD-EF12-345678901234}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{A123C456-D789-ABCD-EF12-345678901234}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\sp">
+      <UniqueIdentifier>{C123C456-D789-ABCD-EF12-345678901234}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\lib">
+      <UniqueIdentifier>{D123C456-D789-ABCD-EF12-345678901234}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\DllMain.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Proxy.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\PatternScanner.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\TranslationHooks.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\sp\environment.cpp">
+      <Filter>src\sp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\sp\file.cpp">
+      <Filter>src\sp</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\PatternScanner.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\TranslationHooks.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\GOTG_Translation.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\sp\environment.h">
+      <Filter>src\sp</Filter>
+    </ClInclude>
+    <ClInclude Include="src\sp\file.h">
+      <Filter>src\sp</Filter>
+    </ClInclude>
+    <ClInclude Include="src\sp\str.h">
+      <Filter>src\sp</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\Exports.def">
+      <Filter>src</Filter>
+    </None>
+  </ItemGroup>
+</Project>

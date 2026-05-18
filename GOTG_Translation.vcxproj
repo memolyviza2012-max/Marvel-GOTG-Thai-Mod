@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <ProjectGuid>{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>GOTGTranslation</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <OutDir>$(ProjectDir)build\</OutDir>
+    <IntDir>$(ProjectDir)obj\$(Configuration)\</IntDir>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+
+  <!-- ======================================================================
+       RELEASE CONFIGURATION — /MT (fully static CRT)
+       Exports via #pragma comment(linker, ...) in Proxy.cpp
+       No .def file needed
+  ====================================================================== -->
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;GOTGTRANSLATION_EXPORTS;MINHOOK_AVAILABLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)src\lib;$(ProjectDir)src\lib\imgui;$(ProjectDir)src\sp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile></PrecompiledHeaderFile>
+      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <EnableUAC>false</EnableUAC>
+      <AdditionalDependencies>kernel32.lib;user32.lib;psapi.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)version.dll</OutputFile>
+    </Link>
+    <Lib>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
+  </ItemDefinitionGroup>
+
+  <!-- ======================================================================
+       DEBUG CONFIGURATION
+  ====================================================================== -->
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;GOTGTRANSLATION_EXPORTS;MINHOOK_AVAILABLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)src\lib;$(ProjectDir)src\lib\imgui;$(ProjectDir)src\sp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile></PrecompiledHeaderFile>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableUAC>false</EnableUAC>
+      <AdditionalDependencies>kernel32.lib;user32.lib;psapi.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)version.dll</OutputFile>
+    </Link>
+    <Lib>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
+  </ItemDefinitionGroup>
+
+  <!-- ======================================================================
+       SOURCE FILES
+  ====================================================================== -->
+  <ItemGroup>
+    <!-- MinHook source (compiled with /MT) -->
+    <ClCompile Include="$(ProjectDir)src\lib\minhook\hook.c" />
+    <ClCompile Include="$(ProjectDir)src\lib\minhook\trampoline.c" />
+    <ClCompile Include="$(ProjectDir)src\lib\minhook\buffer.c" />
+    <ClCompile Include="$(ProjectDir)src\lib\minhook\hde\hde32.c" />
+    <ClCompile Include="$(ProjectDir)src\lib\minhook\hde\hde64.c" />
+    <!-- Project source -->
+    <ClCompile Include="$(ProjectDir)src\Proxy.cpp" />
+    <ClCompile Include="$(ProjectDir)src\DllMain.cpp" />
+    <ClCompile Include="$(ProjectDir)src\TranslationHooks.cpp" />
+    <ClCompile Include="$(ProjectDir)src\PatternScanner.cpp" />
+    <ClCompile Include="$(ProjectDir)src\sp\environment.cpp" />
+    <ClCompile Include="$(ProjectDir)src\sp\file.cpp" />
+    <!-- Ghost Overlay (external transparent window) -->
+    <ClCompile Include="$(ProjectDir)src\GhostOverlay.cpp" />
+  </ItemGroup>
+
+  <!-- ======================================================================
+       HEADER FILES
+  ====================================================================== -->
+  <ItemGroup>
+    <ClInclude Include="$(ProjectDir)include\MinHook.h" />
+    <ClInclude Include="$(ProjectDir)src\lib\minhook\buffer.h" />
+    <ClInclude Include="$(ProjectDir)src\lib\minhook\trampoline.h" />
+    <ClInclude Include="$(ProjectDir)src\lib\minhook\hde\hde32.h" />
+    <ClInclude Include="$(ProjectDir)src\lib\minhook\hde\hde64.h" />
+    <ClInclude Include="$(ProjectDir)src\lib\minhook\hde\pstdint.h" />
+    <ClInclude Include="$(ProjectDir)src\lib\minhook\hde\table32.h" />
+    <ClInclude Include="$(ProjectDir)src\lib\minhook\hde\table64.h" />
+    <ClInclude Include="$(ProjectDir)include\PatternScanner.h" />
+    <ClInclude Include="$(ProjectDir)include\TranslationHooks.h" />
+    <ClInclude Include="$(ProjectDir)include\GOTG_Translation.h" />
+    <ClInclude Include="$(ProjectDir)src\sp\environment.h" />
+    <ClInclude Include="$(ProjectDir)src\sp\file.h" />
+    <ClInclude Include="$(ProjectDir)src\sp\str.h" />
+    <ClInclude Include="$(ProjectDir)src\lib\nlohmann\json.hpp" />
+    <!-- Ghost Overlay header -->
+    <ClInclude Include="$(ProjectDir)include\GhostOverlay.h" />
+  </ItemGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>
