@@ -755,9 +755,9 @@ int __cdecl detour_FT_New_Memory_Face(void* library, const unsigned char* file_b
 
     if (g_thai_font_loaded && g_thai_font_buffer && g_thai_font_size > 0) {
         // Swap fonts that are in the Latin UI font size range
-        // Exclude very small fonts (<10KB = debug/icon fonts)
+        // Exclude handwriting/special symbol fonts (<100KB) like caveat-condensed (67KB)
         // Exclude very large fonts (>2MB = CJK fonts we don't want to replace)
-        if (file_size >= 10000 && file_size <= 2000000) {
+        if (file_size >= 100000 && file_size <= 2000000) {
             should_swap = true;
         }
     }
@@ -771,9 +771,15 @@ int __cdecl detour_FT_New_Memory_Face(void* library, const unsigned char* file_b
             dbg->print(std::string(tmp) + "\n");
         }
 
-        // Call original FT_New_Memory_Face with our Thai font buffer instead!
-        return g_orig_FT_New_Memory_Face(library, g_thai_font_buffer,
-                                          g_thai_font_size, face_index, aface);
+        // Allocate a completely unique memory buffer copy for this face.
+        // Game engines often track font resources by their buffer pointer;
+        // sharing the exact same address across multiple fonts causes double-free or map collisions on Epic Games.
+        unsigned char* unique_font_buf = new unsigned char[g_thai_font_size];
+        if (unique_font_buf) {
+            memcpy(unique_font_buf, g_thai_font_buffer, g_thai_font_size);
+            return g_orig_FT_New_Memory_Face(library, unique_font_buf,
+                                              g_thai_font_size, face_index, aface);
+        }
     }
 
     // No swap — call original with the engine's buffer
