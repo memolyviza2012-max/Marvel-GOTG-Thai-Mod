@@ -1252,8 +1252,9 @@ GotgHookStatus install_all_hooks()
     }
 
     // =========================================================================
-    // HOOK 6: ui::base::ZTextFieldEntity::OnSetText
+    // HOOK 6: ui::base::ZTextFieldEntity::OnSetText (DISABLED - redundant and dangerous)
     // =========================================================================
+    /*
     {
         uint64_t fallback_rva = 0xBF64D0; // Epic Games
         if (gotg_file_size == 508186624) fallback_rva = 0xBF0170; // Steam
@@ -1274,10 +1275,12 @@ GotgHookStatus install_all_hooks()
             }
         }
     }
+    */
 
     // =========================================================================
-    // HOOK 7: ui::base::ZTextFieldEntity::GetText
+    // HOOK 7: ui::base::ZTextFieldEntity::GetText (DISABLED - redundant and dangerous)
     // =========================================================================
+    /*
     {
         uint64_t fallback_rva = 0xBECEF0; // Epic Games
         if (gotg_file_size == 508186624) fallback_rva = 0xBE6B90; // Steam
@@ -1298,6 +1301,7 @@ GotgHookStatus install_all_hooks()
             }
         }
     }
+    */
 
     if (g_debug) g_debug->print("[OK] All Dawn Engine hooks installed\n");
 
