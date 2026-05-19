@@ -90,7 +90,7 @@ void load_original_dll();
 int get_dll_chain();
 void init_settings();
 void init_debug();
-DWORD WINAPI async_thread(LPVOID param);
+DWORD WINAPI init_and_monitor_thread(LPVOID param);
 void discover_offsets();
 bool validate_game_version();
 extern "C" int LoadSystemVersionDll(void);
@@ -193,35 +193,19 @@ BOOL WINAPI DllMain(HINSTANCE hinst_dll, DWORD fdw_reason, LPVOID lpv_reserved)
             g_debug.print("    " + std::string(import_names[i]) + " @ 0x" + sp::str::to_hex(export_locs[i]) + "\n");
         }
 
-        // Initialize settings and offsets
-        g_debug.print("Initializing settings and discovering offsets...\n");
-        init_settings();
-
-        // Install MinHook detours for Dawn Engine string interception
-        g_debug.print("Installing MinHook detours...");
-        GotgHookStatus hook_status = install_all_hooks();
-        if (hook_status != GotgHookStatus::OK)
+        // Create async initialization and monitoring thread
+        g_debug.print("Spawning async initialization thread...\n");
+        HANDLE init_thread_handle = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)&init_and_monitor_thread, 0, 0, 0);
+        if (!init_thread_handle)
         {
-            g_debug.print("[ERROR] Hook installation failed (status: " + std::to_string((int)hook_status) + ")\n");
-            g_debug.print("[ERROR] Translation system will not function\n");
-            g_debug.print("[ERROR] Check GOTG_Mod.log for MinHook error details\n");
+            g_debug.print("[ERROR] Failed to create async initialization thread\n");
+            return FALSE;
         }
-
-        // Create async debug monitoring thread
-        g_debug.print("Starting async monitoring thread...\n");
-        HANDLE async_thread_handle = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)&async_thread, 0, 0, 0);
-        if (!async_thread_handle)
+        else
         {
-            g_debug.print("[WARNING] Failed to create async thread\n");
+            // Close thread handle to prevent leak
+            CloseHandle(init_thread_handle);
         }
-
-        // Ghost Overlay removed — native font injection via FT_New_Memory_Face
-        // renders Thai text directly through the Dawn Engine's FreeType pipeline.
-        // No external transparent window needed anymore.
-
-        g_debug.print("\n[OK] Mod initialization complete\n");
-        g_debug.print("    Translation dictionary: " + std::to_string(get_translation_count()) + " entries\n");
-        g_debug.print("    Translations enabled: " + std::string(get_translations_enabled() ? "YES" : "NO") + "\n\n");
     }
     else if (fdw_reason == DLL_PROCESS_DETACH)
     {
@@ -358,9 +342,6 @@ void init_settings()
 
     g_debug.print("    EnableTranslation: " + std::to_string(translations_enabled) + "\n");
     g_debug.print("    DebugStringCapture: " + std::to_string(debug_string_capture) + "\n");
-
-    // Discover memory offsets via pattern scanning
-    discover_offsets();
 
     // Load translation JSON file
     char json_path[MAX_PATH];
@@ -542,9 +523,30 @@ void discover_offsets()
 // ASYNC MONITORING THREAD
 // ============================================================================
 
-DWORD WINAPI async_thread(LPVOID param)
+DWORD WINAPI init_and_monitor_thread(LPVOID param)
 {
-    g_debug.print("[THREAD] Async monitoring thread started\n");
+    // Sleep briefly (50 milliseconds) to allow the Windows Loader lock to be fully released and other DLLs/overlays to settle
+    Sleep(50);
+
+    g_debug.print("[THREAD] Async initialization thread started...\n");
+
+    // Initialize settings (loads config, JSON, sets up font path)
+    g_debug.print("[THREAD] Initializing settings...\n");
+    init_settings();
+
+    // Install MinHook detours for Dawn Engine string interception and FreeType font swapping
+    g_debug.print("[THREAD] Installing MinHook detours...\n");
+    GotgHookStatus hook_status = install_all_hooks();
+    if (hook_status != GotgHookStatus::OK)
+    {
+        g_debug.print("[THREAD] [ERROR] Hook installation failed (status: " + std::to_string((int)hook_status) + ")\n");
+    }
+    else
+    {
+        g_debug.print("[THREAD] [OK] All hooks installed successfully outside Loader Lock!\n");
+    }
+
+    g_debug.print("[THREAD] Entering monitoring loop...\n");
 
     int tick_count = 0;
 
