@@ -1102,9 +1102,15 @@ GotgHookStatus install_all_hooks()
             if (g_debug) g_debug->print("[SCAN] Dynamic Match: " + std::string(name) + " @ 0x" + sp::str::to_hex((uint64_t)addr) + "\n");
             return addr;
         }
-        void* fallback_addr = (void*)(gotg_base + fallback_rva);
-        if (g_debug) g_debug->print("[SCAN] Fallback (Hardcoded): " + std::string(name) + " @ 0x" + sp::str::to_hex((uint64_t)fallback_addr) + "\n");
-        return fallback_addr;
+        // ONLY allow hardcoded RVA fallback if this is a known/verified executable size!
+        bool is_known_version = (gotg_file_size == 508186624 || gotg_file_size == 497230848);
+        if (is_known_version) {
+            void* fallback_addr = (void*)(gotg_base + fallback_rva);
+            if (g_debug) g_debug->print("[SCAN] Fallback (Hardcoded): " + std::string(name) + " @ 0x" + sp::str::to_hex((uint64_t)fallback_addr) + "\n");
+            return fallback_addr;
+        }
+        if (g_debug) g_debug->print("[SCAN] [WARNING] Scan failed on UNKNOWN version. Hook skipped to prevent crash: " + std::string(name) + "\n");
+        return nullptr;
     };
 
     // =========================================================================
@@ -1120,14 +1126,16 @@ GotgHookStatus install_all_hooks()
         };
         void* target_addr = scan_rva("ZSubtitlesField::SetText", PATTERN_SubtitlesSetText, sizeof(PATTERN_SubtitlesSetText), "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", fallback_rva);
 
-        status = MH_CreateHook(target_addr,
-                               &detour_ZSubtitlesField_SetText,
-                               reinterpret_cast<void**>(&g_orig_ZSubtitlesField_SetText));
-        if (status == MH_OK) {
-            status = MH_EnableHook(target_addr);
-            if (g_debug) g_debug->print("[OK] Hooked ZSubtitlesField::SetText @ 0x" + sp::str::to_hex((uint64_t)target_addr) + "\n");
-        } else {
-            if (g_debug) g_debug->print("[ERROR] ZSubtitlesField::SetText hook failed: " + std::string(MH_STATUS_MESSAGE(status)) + "\n");
+        if (target_addr) {
+            status = MH_CreateHook(target_addr,
+                                   &detour_ZSubtitlesField_SetText,
+                                   reinterpret_cast<void**>(&g_orig_ZSubtitlesField_SetText));
+            if (status == MH_OK) {
+                status = MH_EnableHook(target_addr);
+                if (g_debug) g_debug->print("[OK] Hooked ZSubtitlesField::SetText @ 0x" + sp::str::to_hex((uint64_t)target_addr) + "\n");
+            } else {
+                if (g_debug) g_debug->print("[ERROR] ZSubtitlesField::SetText hook failed: " + std::string(MH_STATUS_MESSAGE(status)) + "\n");
+            }
         }
     }
 
@@ -1182,14 +1190,16 @@ GotgHookStatus install_all_hooks()
         };
         void* target_addr = scan_rva("FT_New_Memory_Face", PATTERN_FTNewMemoryFace, sizeof(PATTERN_FTNewMemoryFace), "xxxxxxxxxxxxxxxxxxxx", fallback_rva);
 
-        status = MH_CreateHook(target_addr,
-                               &detour_FT_New_Memory_Face,
-                               reinterpret_cast<void**>(&g_orig_FT_New_Memory_Face));
-        if (status == MH_OK) {
-            status = MH_EnableHook(target_addr);
-            if (g_debug) g_debug->print("[OK] Hooked FT_New_Memory_Face @ 0x" + sp::str::to_hex((uint64_t)target_addr) + "\n");
-        } else {
-            if (g_debug) g_debug->print("[WARN] FT_New_Memory_Face hook failed: " + std::string(MH_STATUS_MESSAGE(status)) + "\n");
+        if (target_addr) {
+            status = MH_CreateHook(target_addr,
+                                   &detour_FT_New_Memory_Face,
+                                   reinterpret_cast<void**>(&g_orig_FT_New_Memory_Face));
+            if (status == MH_OK) {
+                status = MH_EnableHook(target_addr);
+                if (g_debug) g_debug->print("[OK] Hooked FT_New_Memory_Face @ 0x" + sp::str::to_hex((uint64_t)target_addr) + "\n");
+            } else {
+                if (g_debug) g_debug->print("[WARN] FT_New_Memory_Face hook failed: " + std::string(MH_STATUS_MESSAGE(status)) + "\n");
+            }
         }
     }
 
@@ -1206,13 +1216,15 @@ GotgHookStatus install_all_hooks()
         };
         void* target_addr = scan_rva("TryGetText", PATTERN_TryGetText, sizeof(PATTERN_TryGetText), "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", fallback_rva);
 
-        status = MH_CreateHook(target_addr, &detour_ZTextBundle_TryGetText,
-                               reinterpret_cast<void**>(&g_orig_ZTextBundle_TryGetText));
-        if (status == MH_OK) {
-            MH_EnableHook(target_addr);
-            if (g_debug) g_debug->print("[OK] Hooked TryGetText @ 0x" + sp::str::to_hex((uint64_t)target_addr) + "\n");
-        } else {
-            if (g_debug) g_debug->print("[WARN] TryGetText hook FAILED: " + std::string(MH_STATUS_MESSAGE(status)) + "\n");
+        if (target_addr) {
+            status = MH_CreateHook(target_addr, &detour_ZTextBundle_TryGetText,
+                                   reinterpret_cast<void**>(&g_orig_ZTextBundle_TryGetText));
+            if (status == MH_OK) {
+                MH_EnableHook(target_addr);
+                if (g_debug) g_debug->print("[OK] Hooked TryGetText @ 0x" + sp::str::to_hex((uint64_t)target_addr) + "\n");
+            } else {
+                if (g_debug) g_debug->print("[WARN] TryGetText hook FAILED: " + std::string(MH_STATUS_MESSAGE(status)) + "\n");
+            }
         }
     }
     {
@@ -1224,13 +1236,15 @@ GotgHookStatus install_all_hooks()
         };
         void* target_addr = scan_rva("TryGetText_Hash", PATTERN_TryGetTextHash, sizeof(PATTERN_TryGetTextHash), "xxxxxxxxxxxxxxxxxxxx", fallback_rva);
 
-        status = MH_CreateHook(target_addr, &detour_ZTextBundle_TryGetText_Hash,
-                               reinterpret_cast<void**>(&g_orig_ZTextBundle_TryGetText_Hash));
-        if (status == MH_OK) {
-            MH_EnableHook(target_addr);
-            if (g_debug) g_debug->print("[OK] Hooked TryGetText_Hash @ 0x" + sp::str::to_hex((uint64_t)target_addr) + "\n");
-        } else {
-            if (g_debug) g_debug->print("[WARN] TryGetText_Hash hook FAILED: " + std::string(MH_STATUS_MESSAGE(status)) + "\n");
+        if (target_addr) {
+            status = MH_CreateHook(target_addr, &detour_ZTextBundle_TryGetText_Hash,
+                                   reinterpret_cast<void**>(&g_orig_ZTextBundle_TryGetText_Hash));
+            if (status == MH_OK) {
+                MH_EnableHook(target_addr);
+                if (g_debug) g_debug->print("[OK] Hooked TryGetText_Hash @ 0x" + sp::str::to_hex((uint64_t)target_addr) + "\n");
+            } else {
+                if (g_debug) g_debug->print("[WARN] TryGetText_Hash hook FAILED: " + std::string(MH_STATUS_MESSAGE(status)) + "\n");
+            }
         }
     }
 
@@ -1246,13 +1260,15 @@ GotgHookStatus install_all_hooks()
         };
         void* target_addr = scan_rva("OnSetText", PATTERN_OnSetText, sizeof(PATTERN_OnSetText), "xxxxxxxxxxxxxxxxxxxxxxx", fallback_rva);
 
-        status = MH_CreateHook(target_addr, &detour_ZTextFieldEntity_OnSetText,
-                               reinterpret_cast<void**>(&g_orig_ZTextFieldEntity_OnSetText));
-        if (status == MH_OK) {
-            MH_EnableHook(target_addr);
-            if (g_debug) g_debug->print("[OK] Hooked OnSetText @ 0x" + sp::str::to_hex((uint64_t)target_addr) + "\n");
-        } else {
-            if (g_debug) g_debug->print("[WARN] OnSetText hook failed: " + std::string(MH_STATUS_MESSAGE(status)) + "\n");
+        if (target_addr) {
+            status = MH_CreateHook(target_addr, &detour_ZTextFieldEntity_OnSetText,
+                                   reinterpret_cast<void**>(&g_orig_ZTextFieldEntity_OnSetText));
+            if (status == MH_OK) {
+                MH_EnableHook(target_addr);
+                if (g_debug) g_debug->print("[OK] Hooked OnSetText @ 0x" + sp::str::to_hex((uint64_t)target_addr) + "\n");
+            } else {
+                if (g_debug) g_debug->print("[WARN] OnSetText hook failed: " + std::string(MH_STATUS_MESSAGE(status)) + "\n");
+            }
         }
     }
 
@@ -1268,13 +1284,15 @@ GotgHookStatus install_all_hooks()
         };
         void* target_addr = scan_rva("GetText", PATTERN_GetText, sizeof(PATTERN_GetText), "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", fallback_rva);
 
-        status = MH_CreateHook(target_addr, &detour_ZTextFieldEntity_GetText,
-                               reinterpret_cast<void**>(&g_orig_ZTextFieldEntity_GetText));
-        if (status == MH_OK) {
-            MH_EnableHook(target_addr);
-            if (g_debug) g_debug->print("[OK] Hooked GetText @ 0x" + sp::str::to_hex((uint64_t)target_addr) + "\n");
-        } else {
-            if (g_debug) g_debug->print("[WARN] GetText hook failed: " + std::string(MH_STATUS_MESSAGE(status)) + "\n");
+        if (target_addr) {
+            status = MH_CreateHook(target_addr, &detour_ZTextFieldEntity_GetText,
+                                   reinterpret_cast<void**>(&g_orig_ZTextFieldEntity_GetText));
+            if (status == MH_OK) {
+                MH_EnableHook(target_addr);
+                if (g_debug) g_debug->print("[OK] Hooked GetText @ 0x" + sp::str::to_hex((uint64_t)target_addr) + "\n");
+            } else {
+                if (g_debug) g_debug->print("[WARN] GetText hook failed: " + std::string(MH_STATUS_MESSAGE(status)) + "\n");
+            }
         }
     }
 

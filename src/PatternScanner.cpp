@@ -15,13 +15,41 @@ void* PatternScanner::find_pattern(
     if (!region_start || !pattern || !mask || pattern_len == 0)
         return nullptr;
 
-    DWORD64 max_search = region_size - pattern_len;
-    for (DWORD64 i = 0; i <= max_search; i++)
+    uint8_t* scan_ptr = region_start;
+    uint8_t* scan_end = region_start + region_size;
+
+    while (scan_ptr < scan_end - pattern_len)
     {
-        if (matches_mask(region_start + i, pattern, mask, pattern_len))
+        MEMORY_BASIC_INFORMATION mbi;
+        if (VirtualQuery(scan_ptr, &mbi, sizeof(mbi)) == 0)
         {
-            return (void*)(region_start + i);
+            scan_ptr += 4096;
+            continue;
         }
+
+        uint8_t* block_end = (uint8_t*)mbi.BaseAddress + mbi.RegionSize;
+        if (block_end > scan_end) block_end = scan_end;
+
+        // Check if the region is committed and has read access
+        bool is_readable = (mbi.State == MEM_COMMIT) &&
+            ((mbi.Protect & PAGE_READONLY) ||
+             (mbi.Protect & PAGE_READWRITE) ||
+             (mbi.Protect & PAGE_EXECUTE_READ) ||
+             (mbi.Protect & PAGE_EXECUTE_READWRITE));
+
+        if (is_readable && !(mbi.Protect & PAGE_GUARD))
+        {
+            uint8_t* search_end = block_end - pattern_len;
+            for (uint8_t* p = scan_ptr; p <= search_end; ++p)
+            {
+                if (matches_mask(p, pattern, mask, pattern_len))
+                {
+                    return (void*)p;
+                }
+            }
+        }
+
+        scan_ptr = block_end;
     }
     return nullptr;
 }
@@ -38,13 +66,41 @@ std::vector<void*> PatternScanner::find_all_patterns(
     if (!region_start || !pattern || !mask || pattern_len == 0)
         return results;
 
-    DWORD64 max_search = region_size - pattern_len;
-    for (DWORD64 i = 0; i <= max_search; i++)
+    uint8_t* scan_ptr = region_start;
+    uint8_t* scan_end = region_start + region_size;
+
+    while (scan_ptr < scan_end - pattern_len)
     {
-        if (matches_mask(region_start + i, pattern, mask, pattern_len))
+        MEMORY_BASIC_INFORMATION mbi;
+        if (VirtualQuery(scan_ptr, &mbi, sizeof(mbi)) == 0)
         {
-            results.push_back((void*)(region_start + i));
+            scan_ptr += 4096;
+            continue;
         }
+
+        uint8_t* block_end = (uint8_t*)mbi.BaseAddress + mbi.RegionSize;
+        if (block_end > scan_end) block_end = scan_end;
+
+        // Check if the region is committed and has read access
+        bool is_readable = (mbi.State == MEM_COMMIT) &&
+            ((mbi.Protect & PAGE_READONLY) ||
+             (mbi.Protect & PAGE_READWRITE) ||
+             (mbi.Protect & PAGE_EXECUTE_READ) ||
+             (mbi.Protect & PAGE_EXECUTE_READWRITE));
+
+        if (is_readable && !(mbi.Protect & PAGE_GUARD))
+        {
+            uint8_t* search_end = block_end - pattern_len;
+            for (uint8_t* p = scan_ptr; p <= search_end; ++p)
+            {
+                if (matches_mask(p, pattern, mask, pattern_len))
+                {
+                    results.push_back((void*)p);
+                }
+            }
+        }
+
+        scan_ptr = block_end;
     }
     return results;
 }
