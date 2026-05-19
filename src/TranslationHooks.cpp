@@ -902,11 +902,9 @@ bool __fastcall detour_ZTextBundle_TryGetText(void* pThis, void* pKey, void* pOu
             zs->text_ptr[i] = thai[i];
         zs->text_ptr[thai_len] = '\0';
         zs->length = thai_len;
-    } else {
-        // Buffer too small — swap pointer to persistent dict string
-        zs->text_ptr = const_cast<char*>(thai);
-        zs->length = thai_len;
-        zs->capacity = thai_len;
+        // Safe Fallback: If Thai text exceeds original capacity,
+        // we must NOT swap the pointer (Crash Vector 2).
+        // Returning the original English text is 100% stable.
     }
     return result;
 }
@@ -952,10 +950,9 @@ bool __fastcall detour_ZTextBundle_TryGetText_Hash(void* pThis, void* pRDX, void
             zs->text_ptr[i] = thai[i];
         zs->text_ptr[thai_len] = '\0';
         zs->length = thai_len;
-    } else {
-        zs->text_ptr = const_cast<char*>(thai);
-        zs->length = thai_len;
-        zs->capacity = thai_len;
+        // Safe Fallback: If Thai text exceeds original capacity,
+        // we must NOT swap the pointer (Crash Vector 2).
+        // Returning the original English text is 100% stable.
     }
     return result;
 }
