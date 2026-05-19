@@ -47,16 +47,13 @@ HINSTANCE dll_instance = NULL;
 HINSTANCE dll_chain_instance = NULL;
 
 // ============================================================================
-// GAME MEMORY INFO
-// ============================================================================
-
-uint64_t gotg_base = 0;
-DWORD64 gotg_size = 0;
-
-// ============================================================================
 // EXPORTED VARIABLES — defined here, declared extern "C" in TranslationHooks.h
 // ============================================================================
 extern "C" {
+    uint64_t gotg_base              = 0;
+    uint64_t gotg_size              = 0;
+    uint64_t gotg_file_size         = 0;
+
     UINT_PTR export_locs[15]        = {};
     uint8_t  translations_enabled   = 1;
     uint8_t  debug_string_capture   = 0;
@@ -83,8 +80,6 @@ extern "C" {
     uint64_t textlist_res_id        = 0;
     uint32_t textlist_str_id        = 0;
     uint64_t video_res_id           = 0;
-    
-    uint64_t gotg_file_size         = 0;
 }
 
 // ============================================================================

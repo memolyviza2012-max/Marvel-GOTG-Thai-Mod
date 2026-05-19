@@ -1095,34 +1095,30 @@ GotgHookStatus install_all_hooks()
     }
     if (g_debug) g_debug->print("[OK] MinHook initialized\n");
 
-    // =========================================================================
-    // HOOK 1: StringAlloc — DISABLED for isolation test
-    // =========================================================================
-    /*
-    {
-        void* target_addr = (void*)(gotg_base + 0x64CA24);
-        if (g_debug) g_debug->print("[INFO] StringAlloc target: 0x" + sp::str::to_hex((uint64_t)target_addr) + "\n");
-
-        status = MH_CreateHook(target_addr,
-                               &detour_string_alloc,
-                               reinterpret_cast<void**>(&g_orig_StringAlloc));
-        if (status == MH_OK) {
-            status = MH_EnableHook(target_addr);
-            if (g_debug) g_debug->print("[OK] Hooked StringAlloc @ 0x" + sp::str::to_hex((uint64_t)target_addr) + "\n");
+    // Dynamic pattern scanner helper with size-based RVA fallback
+    auto scan_rva = [](const char* name, const uint8_t* pattern, DWORD64 pattern_len, const char* mask, uint64_t fallback_rva) -> void* {
+        void* addr = PatternScanner::find_pattern((uint8_t*)gotg_base, gotg_size, pattern, pattern_len, mask);
+        if (addr) {
+            if (g_debug) g_debug->print("[SCAN] Dynamic Match: " + std::string(name) + " @ 0x" + sp::str::to_hex((uint64_t)addr) + "\n");
+            return addr;
         }
-    }
-    */
+        void* fallback_addr = (void*)(gotg_base + fallback_rva);
+        if (g_debug) g_debug->print("[SCAN] Fallback (Hardcoded): " + std::string(name) + " @ 0x" + sp::str::to_hex((uint64_t)fallback_addr) + "\n");
+        return fallback_addr;
+    };
 
     // =========================================================================
     // HOOK 2: ZSubtitlesField::SetText — subtitle rendering + translation
-    // Offset: gotg_base + 0x1BFB5A0
     // =========================================================================
     {
-        uint64_t rva = 0x1BFB5A0; // Epic Games
-        if (gotg_file_size == 508186624) rva = 0x1BF5360; // Steam
+        uint64_t fallback_rva = 0x1BFB5A0; // Epic Games
+        if (gotg_file_size == 508186624) fallback_rva = 0x1BF5360; // Steam
         
-        void* target_addr = (void*)(gotg_base + rva);
-        if (g_debug) g_debug->print("[INFO] ZSubtitlesField::SetText target: 0x" + sp::str::to_hex((uint64_t)target_addr) + "\n");
+        static const uint8_t PATTERN_SubtitlesSetText[] = { 
+            0x40, 0x53, 0x48, 0x83, 0xEC, 0x20, 0x48, 0x8B, 0x81, 0x18, 0x04, 0x00, 0x00, 0x48, 0x8B, 0xD9,
+            0x48, 0x85, 0xC0, 0x74, 0x12, 0x48, 0x83, 0x38, 0x00, 0x74, 0x0C, 0x48, 0x8B, 0x89, 0x20, 0x04
+        };
+        void* target_addr = scan_rva("ZSubtitlesField::SetText", PATTERN_SubtitlesSetText, sizeof(PATTERN_SubtitlesSetText), "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", fallback_rva);
 
         status = MH_CreateHook(target_addr,
                                &detour_ZSubtitlesField_SetText,
@@ -1139,13 +1135,10 @@ GotgHookStatus install_all_hooks()
 
     // =========================================================================
     // HOOK 3: FT_New_Memory_Face — font injection for Thai UI rendering
-    // RVA: 0x1DB69D30 (verified via gotg.pdb + DbgHelp symbol extraction)
-    // This is the FreeType function that loads font faces from memory buffers.
     // =========================================================================
     {
         // Load Thai font file from disk into memory buffer
         if (!g_thai_font_loaded) {
-            // Build path: same directory as gotg.exe
             wchar_t exe_dir[MAX_PATH] = L"";
             GetModuleFileNameW(nullptr, exe_dir, MAX_PATH);
             wchar_t* last_slash = wcsrchr(exe_dir, L'\\');
@@ -1181,11 +1174,13 @@ GotgHookStatus install_all_hooks()
             }
         }
 
-        uint64_t rva = 0x1DB69D30; // Epic Games
-        if (gotg_file_size == 508186624) rva = 0x1E644840; // Steam
+        uint64_t fallback_rva = 0x1DB69D30; // Epic Games
+        if (gotg_file_size == 508186624) fallback_rva = 0x1E644840; // Steam
         
-        void* target_addr = (void*)(gotg_base + rva);
-        if (g_debug) g_debug->print("[INFO] FT_New_Memory_Face target: 0x" + sp::str::to_hex((uint64_t)target_addr) + "\n");
+        static const uint8_t PATTERN_FTNewMemoryFace[] = { 
+            0x48, 0x83, 0xEC, 0x78, 0x44, 0x89, 0xC8, 0x48, 0x85, 0xD2, 0x75, 0x08, 0x8D, 0x42, 0x06, 0x48, 0x83, 0xC4, 0x78, 0xC3 
+        };
+        void* target_addr = scan_rva("FT_New_Memory_Face", PATTERN_FTNewMemoryFace, sizeof(PATTERN_FTNewMemoryFace), "xxxxxxxxxxxxxxxxxxxx", fallback_rva);
 
         status = MH_CreateHook(target_addr,
                                &detour_FT_New_Memory_Face,
@@ -1199,13 +1194,18 @@ GotgHookStatus install_all_hooks()
     }
 
     // =========================================================================
-    // HOOK 4/5: TryGetText — PASSTHROUGH (isolation test)
+    // HOOK 4/5: TryGetText & TryGetText_Hash
     // =========================================================================
     {
-        uint64_t rva = 0x0060DAD0; // Epic Games
-        if (gotg_file_size == 508186624) rva = 0x607B10; // Steam
+        uint64_t fallback_rva = 0x0060DAD0; // Epic Games
+        if (gotg_file_size == 508186624) fallback_rva = 0x607B10; // Steam
         
-        void* target_addr = (void*)(gotg_base + rva);
+        static const uint8_t PATTERN_TryGetText[] = { 
+            0x48, 0x89, 0x5C, 0x24, 0x08, 0x48, 0x89, 0x74, 0x24, 0x10, 0x55, 0x57, 0x41, 0x56, 0x48, 0x8D, 0x6C, 0x24, 0x90, 0x48, 0x81, 0xEC, 0x70, 0x01, 0x00, 0x00,
+            0x45, 0x33, 0xF6, 0x49, 0x8B, 0xF8
+        };
+        void* target_addr = scan_rva("TryGetText", PATTERN_TryGetText, sizeof(PATTERN_TryGetText), "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", fallback_rva);
+
         status = MH_CreateHook(target_addr, &detour_ZTextBundle_TryGetText,
                                reinterpret_cast<void**>(&g_orig_ZTextBundle_TryGetText));
         if (status == MH_OK) {
@@ -1216,10 +1216,14 @@ GotgHookStatus install_all_hooks()
         }
     }
     {
-        uint64_t rva = 0x60DD80; // Epic Games
-        if (gotg_file_size == 508186624) rva = 0x607DC0; // Steam
+        uint64_t fallback_rva = 0x60DD80; // Epic Games
+        if (gotg_file_size == 508186624) fallback_rva = 0x607DC0; // Steam
         
-        void* target_addr = (void*)(gotg_base + rva);
+        static const uint8_t PATTERN_TryGetTextHash[] = { 
+            0x40, 0x53, 0x48, 0x83, 0xEC, 0x30, 0x45, 0x33, 0xC9, 0x48, 0x89, 0x7C, 0x24, 0x48, 0x49, 0x8B, 0xF8, 0x44, 0x8B, 0xD2 
+        };
+        void* target_addr = scan_rva("TryGetText_Hash", PATTERN_TryGetTextHash, sizeof(PATTERN_TryGetTextHash), "xxxxxxxxxxxxxxxxxxxx", fallback_rva);
+
         status = MH_CreateHook(target_addr, &detour_ZTextBundle_TryGetText_Hash,
                                reinterpret_cast<void**>(&g_orig_ZTextBundle_TryGetText_Hash));
         if (status == MH_OK) {
@@ -1234,10 +1238,14 @@ GotgHookStatus install_all_hooks()
     // HOOK 6: ui::base::ZTextFieldEntity::OnSetText
     // =========================================================================
     {
-        uint64_t rva = 0xBF64D0; // Epic Games
-        if (gotg_file_size == 508186624) rva = 0xBF0170; // Steam
+        uint64_t fallback_rva = 0xBF64D0; // Epic Games
+        if (gotg_file_size == 508186624) fallback_rva = 0xBF0170; // Steam
         
-        void* target_addr = (void*)(gotg_base + rva);
+        static const uint8_t PATTERN_OnSetText[] = { 
+            0x48, 0x8B, 0x01, 0x45, 0x33, 0xC0, 0x48, 0xFF, 0xA0, 0x10, 0x04, 0x00, 0x00, 0xCC, 0xCC, 0xCC, 0x48, 0x83, 0xEC, 0x38, 0x8B, 0x42, 0x08 
+        };
+        void* target_addr = scan_rva("OnSetText", PATTERN_OnSetText, sizeof(PATTERN_OnSetText), "xxxxxxxxxxxxxxxxxxxxxxx", fallback_rva);
+
         status = MH_CreateHook(target_addr, &detour_ZTextFieldEntity_OnSetText,
                                reinterpret_cast<void**>(&g_orig_ZTextFieldEntity_OnSetText));
         if (status == MH_OK) {
@@ -1250,14 +1258,16 @@ GotgHookStatus install_all_hooks()
 
     // =========================================================================
     // HOOK 7: ui::base::ZTextFieldEntity::GetText
-    // RVA: 0x00BECEF0
-    // Re-enabled: Previous heap corruption was from StringAlloc (now disabled)
     // =========================================================================
     {
-        uint64_t rva = 0xBECEF0; // Epic Games
-        if (gotg_file_size == 508186624) rva = 0xBE6B90; // Steam
+        uint64_t fallback_rva = 0xBECEF0; // Epic Games
+        if (gotg_file_size == 508186624) fallback_rva = 0xBE6B90; // Steam
         
-        void* target_addr = (void*)(gotg_base + rva);
+        static const uint8_t PATTERN_GetText[] = { 
+            0x48, 0x89, 0x5C, 0x24, 0x10, 0x48, 0x89, 0x6C, 0x24, 0x18, 0x48, 0x89, 0x74, 0x24, 0x20, 0x57, 0x48, 0x81, 0xEC, 0x80, 0x00, 0x00, 0x00, 0x48, 0x8B, 0xFA, 0x48, 0x8B, 0xD9, 0x33, 0xED 
+        };
+        void* target_addr = scan_rva("GetText", PATTERN_GetText, sizeof(PATTERN_GetText), "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", fallback_rva);
+
         status = MH_CreateHook(target_addr, &detour_ZTextFieldEntity_GetText,
                                reinterpret_cast<void**>(&g_orig_ZTextFieldEntity_GetText));
         if (status == MH_OK) {
