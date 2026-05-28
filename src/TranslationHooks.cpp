@@ -759,6 +759,13 @@ int __cdecl detour_FT_New_Memory_Face(void* library, const unsigned char* file_b
         // Exclude very large fonts (>2MB = CJK fonts we don't want to replace)
         if (file_size >= 10000 && file_size <= 2000000) {
             should_swap = true;
+            
+            // FONT 4 CRASH FIX (Epic Games specific):
+            // Font #4 (67848 bytes) crashes when swapped in Epic Games version
+            if (file_size == 67848) {
+                should_swap = false;
+                if (dbg) dbg->print("[FONT] SKIPPING Font #4 swap to prevent crash on Epic Games.\n");
+            }
         }
     }
 
@@ -897,10 +904,9 @@ bool __fastcall detour_ZTextBundle_TryGetText(void* pThis, void* pKey, void* pOu
         zs->text_ptr[thai_len] = '\0';
         zs->length = thai_len;
     } else {
-        // Buffer too small — swap pointer to persistent dict string
-        zs->text_ptr = const_cast<char*>(thai);
-        zs->length = thai_len;
-        zs->capacity = thai_len;
+        // CRASH VECTOR 2 FIX: Do NOT swap pointers for TryGetText!
+        // The engine frees these buffers. If we swap it to our dictionary, it will crash when freed.
+        // Fallback to English for strings that exceed buffer capacity.
     }
     return result;
 }
@@ -947,9 +953,7 @@ bool __fastcall detour_ZTextBundle_TryGetText_Hash(void* pThis, void* pRDX, void
         zs->text_ptr[thai_len] = '\0';
         zs->length = thai_len;
     } else {
-        zs->text_ptr = const_cast<char*>(thai);
-        zs->length = thai_len;
-        zs->capacity = thai_len;
+        // CRASH VECTOR 2 FIX: Do NOT swap pointers for TryGetText!
     }
     return result;
 }
@@ -1231,8 +1235,9 @@ GotgHookStatus install_all_hooks()
     }
 
     // =========================================================================
-    // HOOK 6: ui::base::ZTextFieldEntity::OnSetText
+    // HOOK 6: ui::base::ZTextFieldEntity::OnSetText (DISABLED - Crash Vector)
     // =========================================================================
+    /*
     {
         uint64_t rva = 0xBF64D0; // Epic Games
         if (gotg_file_size == 508186624) rva = 0xBF0170; // Steam
@@ -1247,12 +1252,13 @@ GotgHookStatus install_all_hooks()
             if (g_debug) g_debug->print("[WARN] OnSetText hook failed: " + std::string(MH_STATUS_MESSAGE(status)) + "\n");
         }
     }
+    */
 
     // =========================================================================
-    // HOOK 7: ui::base::ZTextFieldEntity::GetText
+    // HOOK 7: ui::base::ZTextFieldEntity::GetText (DISABLED - Crash Vector)
     // RVA: 0x00BECEF0
-    // Re-enabled: Previous heap corruption was from StringAlloc (now disabled)
     // =========================================================================
+    /*
     {
         uint64_t rva = 0xBECEF0; // Epic Games
         if (gotg_file_size == 508186624) rva = 0xBE6B90; // Steam
@@ -1267,6 +1273,7 @@ GotgHookStatus install_all_hooks()
             if (g_debug) g_debug->print("[WARN] GetText hook failed: " + std::string(MH_STATUS_MESSAGE(status)) + "\n");
         }
     }
+    */
 
     if (g_debug) g_debug->print("[OK] All Dawn Engine hooks installed\n");
 
