@@ -43,5 +43,6 @@ To compile the proxy DLL yourself:
 
 
 ## 📝 Recent Updates (Version 1.4)
-*   **อัปเดตไฟล์แปลภาษา V1.4:** เพิ่มเนื้อหาคำแปลภาษาไทยใหม่ลงในเกมมากกว่า **5,000 บรรทัด**! (อัปเดตล่าสุดเป็นเวอร์ชัน 1.4 สมบูรณ์แล้ว)
-*   **เพิ่มไฟล์ Skip Logo:** อัปโหลดไฟล์ `3C5412CE8B28C5D133F4024887AA8579.pc_binkvid` ในโฟลเดอร์ `runtime` เพื่อข้ามหน้าโลโก้ตอนเปิดเกม ช่วยแก้ปัญหาเกมแครชและบัคบางจุดในช่วงเริ่มต้นเกม
+*   **Translation Update V1.4:** Added over **5,000+ newly translated lines** into the JSON dictionary. Version 1.4 localization is now complete!
+*   **Skip Logo Bypass:** Uploaded 3C5412CE8B28C5D133F4024887AA8579.pc_binkvid to the 
+untime folder to skip the intro logo sequence. This bypasses known startup crashes and early game bugs.
