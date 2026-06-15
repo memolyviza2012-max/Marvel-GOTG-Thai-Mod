@@ -1,6 +1,6 @@
-@echo off
+﻿@echo off
 chcp 65001 > nul
-title เครื่องมือล้างแคชเกมและการ์ดจอ (Clear Game & GPU Cache)
+title เครื่องมือล้างแคชเกมและการ์ดจอ (Clear Game and GPU Cache)
 color 0B
 
 :: ==========================================
